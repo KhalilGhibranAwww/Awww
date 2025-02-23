@@ -14,12 +14,6 @@ const cloudscraper = require('cloudscraper')
  const UserAgent = require('user-agents');
      var privacyPassSupport = true;
 
-
-
-
-let headers = {};
-
-
 tls.DEFAULT_ECDH_CURVE;
 
 function Cloudflare() {
