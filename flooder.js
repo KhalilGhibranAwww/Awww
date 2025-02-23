@@ -12,7 +12,7 @@ const stringRandom = require('string-random');
 const http = require('http');
 const https = require('https');
 const HttpsProxyAgent = require('https-proxy-agent');
- cloudscraper = require('cloudscraper')
+ const cloudscraper = require('cloudscraper')
  const {
   HeaderGenerator
 } = require('header-generator');
